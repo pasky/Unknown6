@@ -1,11 +1,4 @@
 #include <stdint.h>
-#include <string.h>
-
-static uint8_t rotl8(uint8_t x, int n)
-{
-	return ((x << n) | (x >> (8 - n))) & UINT8_MAX;
-}
-
 
 #define _DWORD uint32_t
 
@@ -13708,7 +13701,7 @@ unsigned char* sub_9C42C(unsigned char* result)
 }
 
 //----- (0009E1C4) --------------------------------------------------------
-unsigned char* sub_9E1C4(unsigned char* result, unsigned char* a3)
+unsigned char* sub_9E1C4(unsigned char* result, unsigned char* a2, unsigned char* a3)
 {
 	int v3; // lr@1
 	int v4; // r11@1
@@ -14149,115 +14142,18 @@ unsigned char* sub_9E1C4(unsigned char* result, unsigned char* a3)
 
 void sub_9E9D8(unsigned char *input, unsigned char*output)
 {
-	_DWORD temp[0x32C / 4];
-	_DWORD temp2[0x100 / 4];
-	memcpy(temp2, input, 0x100);
-	sub_87568((unsigned char*)temp, (unsigned char*)temp2);
-	sub_8930C((unsigned char*)temp);
-	sub_8B2F4((unsigned char*)temp);
-	sub_8D114((unsigned char*)temp);
-	sub_8F0B0((unsigned char*)temp);
-	sub_910A8((unsigned char*)temp);
-	sub_92E08((unsigned char*)temp);
-	sub_94BDC((unsigned char*)temp);
-	sub_96984((unsigned char*)temp);
-	sub_985E0((unsigned char*)temp);
-	sub_9A490((unsigned char*)temp);
-	sub_9C42C((unsigned char*)temp);
-	sub_9E1C4((unsigned char*)temp, (unsigned char*)temp2);
-	memcpy(output, temp2, 0x100);
+	unsigned char temp[0x32C];
+	sub_87568(temp, input);
+	sub_8930C(temp);
+	sub_8B2F4(temp);
+	sub_8D114(temp);
+	sub_8F0B0(temp);
+	sub_910A8(temp);
+	sub_92E08(temp);
+	sub_94BDC(temp);
+	sub_96984(temp);
+	sub_985E0(temp);
+	sub_9A490(temp);
+	sub_9C42C(temp);
+	sub_9E1C4(temp, input, output);
 }
-
-void sub_9E9D8_decrypt(unsigned char *input, unsigned char*output)
-{
-	_DWORD temp[0x32C / 4];
-	_DWORD temp2[0x100 / 4];
-	memcpy(temp2, input, 0x100);
-	sub_9E1C4((unsigned char*)temp, (unsigned char*)temp2);
-	sub_9C42C((unsigned char*)temp);
-	sub_9A490((unsigned char*)temp);
-	sub_985E0((unsigned char*)temp);
-	sub_96984((unsigned char*)temp);
-	sub_94BDC((unsigned char*)temp);
-	sub_92E08((unsigned char*)temp);
-	sub_910A8((unsigned char*)temp);
-	sub_8F0B0((unsigned char*)temp);
-	sub_8D114((unsigned char*)temp);
-	sub_8B2F4((unsigned char*)temp);
-	sub_8930C((unsigned char*)temp);
-	sub_87568((unsigned char*)temp, (unsigned char*)temp2);
-	memcpy(output, temp2, 0x100);
-}
-
-int encrypt(const unsigned char *input, size_t input_size,
-	const unsigned char* iv, size_t iv_size,
-	unsigned char* output, size_t * output_size) {
-	unsigned char arr2[256];
-	unsigned char arr3[256];
-	size_t roundedsize, totalsize;
-
-	if (iv_size != 32){
-		return -1;
-	}
-
-	roundedsize = input_size + (256 - (input_size % 256));
-	totalsize = roundedsize + 32;
-
-	if (output == NULL){
-		*output_size = totalsize;
-		return 0;
-	}
-	if (*output_size < totalsize){
-		*output_size = totalsize;
-		return -1;
-	}
-
-	for (int j = 0; j < 8; j++){
-		for (int i = 0; i < 32; i++){
-			arr2[32 * j + i] = rotl8(iv[i], j); //rotate byte left
-		}
-	}
-
-	memcpy(output, iv, 32);
-	memcpy(output + 32, input, input_size);
-
-	if (roundedsize > input_size)
-	{
-		memset(output + 32 + input_size, 0, roundedsize - input_size); //pad data with zeroes
-	}
-	output[totalsize - 1] = 256 - (input_size % 256);
-
-	for (size_t offset = 32; offset < totalsize; offset += 256)
-	{
-		for (int i = 0; i < 256; i++){
-			output[offset + i] ^= arr2[i];
-		}
-		sub_9E9D8(output + offset, arr3); // !! encryption here
-		memcpy(arr2, arr3, 256);
-		memcpy(output + offset, arr3, 256);
-	}
-
-	*output_size = totalsize;
-	return 0;
-}
-
-void decrypt(unsigned char *input, int size) {
-	char arr2[256];
-	char arr3[256];
-
-	for (int j = 0; j < 8; j++)
-		for (int i = 0; i < 32; i++)
-			arr2[32 * j + i] = rotl8(input[i], j);
-
-	for (int offset = 32; offset < size; offset += 256)
-	{
-		sub_9E9D8_decrypt(input + offset, arr3);
-		for (int i = 0; i < 256; i++)
-			input[offset + i] ^= arr2[i];
-		memcpy(arr2, input + offset, 256);
-		memcpy(input + offset, arr3, 256);
-	}
-
-	memmove(input, input + 32, size - 32);
-}
-
